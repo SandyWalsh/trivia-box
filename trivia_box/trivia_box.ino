@@ -1,4 +1,5 @@
 #include <arduino.h>
+#include <stdarg.h>
 #include <Wire.h>
 
 #define SLAVE_ADDRESS 0x04
@@ -13,6 +14,23 @@ int teams[NUM_TEAMS][PLAYERS_PER_TEAM] = {
 
 int winning_team = -1;
 int winning_player = -1;
+
+// IMPORTANT!
+// DO NOT CALL Serial.print() withing these callbacks!
+// They are interrupt driven and will give you a bad day.
+void receive_data(int byte_count) {
+    while(Wire.available()) {
+      int number = Wire.read();
+    }
+}
+
+void send_data() {
+      byte x[2];
+      x[0] = winning_team;
+      x[1] = winning_player;    
+      Wire.write(x, 2);      
+}
+
 
 void setup() {
   Serial.begin(115200);
@@ -35,19 +53,6 @@ void setup() {
   Wire.onReceive(receive_data);
   Wire.onRequest(send_data);
 
-}
-
-void receive_data(int byte_count) {
-    while(Wire.available()) {
-      number = Wire.read();
-      Serial.print("data received: ");
-      Serial.println(number);
-    }
-}
-
-void send_data() {
-  Wire.write(winning_team);
-  Wire.write(winning_player);
 }
 
 void loop() {
