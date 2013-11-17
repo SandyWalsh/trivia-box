@@ -17,7 +17,6 @@ def writeNumber(value):
 def read_team_and_player():
     try:
         data = bus.read_i2c_block_data(address, 0, 2)
-        print len(data), "/", data
         team = data[0];
         player = data[1];
         return (team, player)
