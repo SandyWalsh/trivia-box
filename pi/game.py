@@ -3,8 +3,14 @@ import json
 import math
 import pygame
 import time
+import smbus
 import sys
 
+# RPI version 1, must use "bus = smbus.SMBus(0)"
+bus = smbus.SMBus(0)
+
+# This is the address we setup in the Arduino Program
+address = 0x04
 
 pygame.init()
 size = width, height = 1024, 768
@@ -41,6 +47,17 @@ def draw_centered(image, dest):
     dest.blit(image, (left, top))
 
 
+def read_team_and_player():
+    try:
+        data = bus.read_i2c_block_data(address, 0, 2)
+        team = data[0];
+        player = data[1];
+        return (team, player)
+    except IOError:
+        return (-1, -1)
+
+
+print "DISPLAY", pygame.display.get_driver()
 screen = pygame.display.set_mode(size)
 plain = pygame.font.Font('BebasNeue.otf', 140)
 fancy = pygame.font.Font('LobsterTwo-Regular.otf', 140)
@@ -51,14 +68,14 @@ outer = screen.get_rect()
 inner = outer.inflate(-100, -50)
 radian = 3.1415926/180.0
 
-if True:
+if False:
     print "Welcome"
     cls()
     draw_centered(title, screen)
     pygame.display.flip()
     time.sleep(3)
 
-if True:
+if False:
     print "Listen"
     cls()
     draw_centered(listen, screen)
@@ -78,10 +95,11 @@ time_between_frames = (1.0 / float(expected_fps))
 inc = 360 / (5 * expected_fps)
 end = 0
 elapsed = 0.0
-print "NUM %s %s" % (elapsed, time_between_frames)
 now = datetime.datetime.utcnow()
 lag_total = 0.0
 computed_points = []
+team = -1
+player = -1
 while end < 360:
     cls()
 
@@ -108,5 +126,12 @@ while end < 360:
     time.sleep((0.9 * time_between_frames) - lag)
     elapsed += time_between_frames
     end += inc
+
+    team, player = read_team_and_player()
+    if team > -1 and team < 4:
+        break
+
+print "Winner: %d, Player: %d" % (team, player)
+print
 
 print "NUM %.3f %s / Lag Total: %f" % (elapsed, datetime.datetime.utcnow() - now, lag_total)
