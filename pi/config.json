@@ -1,0 +1,6 @@
+{
+    "teams": {
+        "Team A": ["Albert", "Alice", "Aaron", "Arial"],
+        "Team B": ["Bert", "Betty", "Benjamin", "Barbera"]
+    }
+}
