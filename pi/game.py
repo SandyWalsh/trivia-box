@@ -50,11 +50,13 @@ def cls(color=black):
     screen.fill(color)
 
 
-def draw_centered(image, dest):
+def draw_centered(image, dest, row=0):
     this_size = image.get_size()
+    height = this_size[1]
     dest_size = dest.get_size()
     left = _center(dest_size[0], this_size[0])
     top = _center(dest_size[1], this_size[1])
+    top += (row * height)
     dest.blit(image, (left, top))
 
 
@@ -77,7 +79,7 @@ def read_team_and_player_kb():
                 sys.exit(1)
             if key >= ord('1') and key <= ord('8'):
                 ch = event.key - ord('1')
-                return (ch % 4, ch / 4)
+                return (ch / 4, ch % 4)
             else:
                 return (-2, -2)
     return (-1, -1)
@@ -103,8 +105,6 @@ plain = pygame.font.Font('BebasNeue.otf', 140)
 fancy = pygame.font.Font('LobsterTwo-Regular.otf', 140)
 title = fancy.render("TriviaBox", True, white)
 listen = plain.render("Listen", True, orange)
-team_text = plain.render(  "Team  : ", True, white)
-player_text = plain.render("Player: ", True, white)
 answer = plain.render("Give Your Answer", True, orange)
 buzz_in = plain.render("Buzz In", True, orange)
 right_answer = plain.render("Correct!", True, green)
@@ -120,7 +120,17 @@ def ray(cx, cy, angle, radius):
     return (cx + (math.cos(angle) * radius), cy + (math.sin(angle) * radius))
 
 
-def clock(extra_text, offset):
+def team_and_player_handler():
+    team, player = read_team_and_player()
+    if team > -1 and team < 4:
+        print "Winner: %d, Player: %d" % (team, player)
+        print
+        return (True, (team, player))
+
+    return (False, (-1, -1))
+
+
+def clock(extra_text, row_offset, handler):
     print "Clock"
     x = _center(width, 0)
     y = _center(height, 0)
@@ -150,6 +160,7 @@ def clock(extra_text, offset):
         pygame.draw.polygon(screen, green, points)
         left = 4 - int(elapsed)
         draw_centered(nums[left], screen)
+        draw_centered(extra_text, screen, row_offset)
         pygame.display.flip()
         lag_end = datetime.datetime.utcnow()
         diff = lag_end - lag_start
@@ -161,20 +172,24 @@ def clock(extra_text, offset):
         elapsed += time_between_frames
         end += inc
 
-        team, player = read_team_and_player()
-        if team > -1 and team < 4:
+        should_break, payload = handler()
+        if should_break:
             break
-
-    print "Winner: %d, Player: %d" % (team, player)
-    print
 
     print "NUM %.3f %s / Lag Total: %f" % \
         (elapsed, datetime.datetime.utcnow() - now, lag_total)
-    return team, player
+    return payload
+
 
 def get_answer(team, player):
     cls()
-    draw_centered(answer, screen)
+    team_name = teams[team][0]
+    player_name = teams[team][1][player]
+    team_text = plain.render(team_name, True, white)
+    player_text = plain.render(player_name, True, white)
+    draw_centered(team_text, screen, -2)
+    draw_centered(player_text, screen, -1)
+    draw_centered(answer, screen, 1)
     pygame.display.flip()
     correct = read_right_or_wrong()
 
@@ -187,12 +202,11 @@ def get_answer(team, player):
     wait_for_key()
     return correct
 
-if False:
-    print "Welcome"
-    cls()
-    draw_centered(title, screen)
-    pygame.display.flip()
-    time.sleep(3)
+print "Welcome"
+cls()
+draw_centered(title, screen)
+pygame.display.flip()
+wait_for_key()
 
 while True:
     print "Listen"
@@ -204,7 +218,7 @@ while True:
         if team == -1:
             continue
         if team == -2:
-            team, player = clock(buzz_in, (0, -200))
+            team, player = clock(buzz_in, -1, team_and_player_handler)
         if team > -1:
             correct = get_answer(team, player)
         else:

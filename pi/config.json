@@ -1,6 +1,6 @@
 {
-    "teams": {
-        "Team A": ["Albert", "Alice", "Aaron", "Arial"],
-        "Team B": ["Bert", "Betty", "Benjamin", "Barbera"]
-    }
+    "teams": [
+        ["Honey Monsters", ["Karen", "Sandy", "Jim", "Colleen"]],
+        ["The Fridge Ninjas", ["Penny", "Arthur", "Chris", "Leslie"]]
+    ]
 }
