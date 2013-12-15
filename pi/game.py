@@ -30,16 +30,41 @@ green = 61, 235, 61
 blue = 61, 61, 235
 
 
+def save_state(filename):
+    with file(filename, 'w') as f:
+        json.dump(state, f)
+
+
+def load_state(filename):
+    with file(filename) as f:
+        return json.load(f)
+
+
 with open('config.json') as config_file:
     config = json.load(config_file)
 
 teams = config['teams']
+
+scores = [[0] * len(team[1]) for team in teams]
+state = {'scores': scores}
+
+try:
+    state = load_state('state.json')
+    scores = state['scores']
+except IOError:
+    save_state('state.json')
+
+
+for score in scores:
+    print "Team:", score
 
 
 def wait_for_key():
     while True:
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
+                if event.key == 27:
+                    sys.exit(1)
                 return event
 
 def _center(larger, smaller):
@@ -248,11 +273,14 @@ def get_answer(team, player):
         screen.blit(success, (0,0))
         draw_centered(right_answer, screen)
         ch = success_sound.play()
+        scores[team][player] += 10
     else:
         screen.blit(failure, (0,0))
         draw_centered(wrong_answer, screen)
         ch = failure_sound.play()
+        scores[team][player] -= 10
     pygame.display.flip()
+    save_state('state.json')
     wait_for_key()
     ch.stop()
     return correct
@@ -264,6 +292,19 @@ pygame.display.flip()
 wait_for_key()
 
 while True:
+    cls()
+    row = -2
+    colors = [green, blue]
+    for idx, score in enumerate(scores):
+        team_name = teams[idx][0]
+        team_text = plain.render(team_name, True, colors.pop())
+        score = plain.render(str(sum(score)), True, white)
+        draw_centered(team_text, screen, row=row)
+        draw_centered(score, screen, row=row+1)
+        row += 3
+    pygame.display.flip()
+    wait_for_key()
+
     print "Listen"
     cls()
     screen.blit(listen_image, (0, 0))
