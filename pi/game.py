@@ -46,7 +46,8 @@ with open('config.json') as config_file:
 teams = config['teams']
 
 scores = [[0] * len(team[1]) for team in teams]
-state = {'scores': scores}
+state = {'scores': scores,
+         'current_round': 1}
 
 try:
     state = load_state('state.json')
@@ -291,7 +292,7 @@ draw_centered(title, screen)
 pygame.display.flip()
 wait_for_key()
 
-while True:
+while state['current_round'] < 20:
     cls()
     row = -2
     colors = [green, blue]
@@ -301,7 +302,9 @@ while True:
         score = plain.render(str(sum(score)), True, white)
         draw_centered(team_text, screen, row=row)
         draw_centered(score, screen, row=row+1)
-        row += 3
+        row += 2
+    this_round = fancy.render("Round %d" % state['current_round'], True, orange)
+    draw_centered(this_round, screen, 2)
     pygame.display.flip()
     wait_for_key()
 
@@ -321,9 +324,28 @@ while True:
             team, player = clock(extra_text, team_and_player_handler,
                                  background=button, sound=jeopardy)
         if team > -1:
-            correct = get_answer(team, player)
+            state['current_round'] = state['current_round'] + 1
+            get_answer(team, player)
         else:
             # Timed out ... no winner
             pass
 
         break
+
+# Final Score
+cls()
+row = -2
+colors = [green, blue]
+for idx, score in enumerate(scores):
+    team_name = teams[idx][0]
+    team_text = plain.render(team_name, True, colors.pop())
+    score = plain.render(str(sum(score)), True, white)
+    draw_centered(team_text, screen, row=row)
+    draw_centered(score, screen, row=row+1)
+    row += 2
+this_round = fancy.render("GAME OVER", True, orange)
+draw_centered(this_round, screen, 2)
+pygame.display.flip()
+wait_for_key()
+
+

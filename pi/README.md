@@ -8,12 +8,12 @@ The game itself assumes two teams for four players. These are defined in
 `config.json`, which looks like this
 
 ```json
-    {
-        "teams": [
-            ["Honey Monsters", ["Karen", "Sandy", "Jim", "Colleen"]],
-            ["The Fridge Ninjas", ["Penny", "Arthur", "Chris", "Leslie"]]
-        ]
-    }
+{
+    "teams": [
+        ["Honey Monsters", ["Karen", "Sandy", "Jim", "Colleen"]],
+        ["The Fridge Ninjas", ["Penny", "Arthur", "Chris", "Leslie"]]
+    ]
+}
 ```
 
 ## Flow
