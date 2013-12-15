@@ -6,6 +6,8 @@ import time
 import smbus
 import sys
 
+import tty, termios
+
 # RPI version 1, must use "bus = smbus.SMBus(0)"
 bus = smbus.SMBus(0)
 
@@ -13,7 +15,10 @@ bus = smbus.SMBus(0)
 address = 0x04
 
 pygame.init()
-size = width, height = 1024, 768
+#size = width, height = 1024, 768
+size = (pygame.display.Info().current_w, pygame.display.Info().current_h)
+width, height = size
+print "CONSOLE", size
 black = 0, 0, 0
 white = 255, 255, 255
 orange = 255, 102, 51
@@ -57,16 +62,92 @@ def read_team_and_player():
         return (-1, -1)
 
 
+def read_team_and_player_kb():
+    for event in pygame.event.get():
+        if event.type == pygame.KEYDOWN:
+            key = event.key
+            if key >= ord('1') and key <= ord('8'):
+                ch = event.key - ord('1')
+                return (ch % 4, ch / 4)
+            else:
+                return (-2, -2)
+    return (-1, -1)
+
+
 print "DISPLAY", pygame.display.get_driver()
-screen = pygame.display.set_mode(size)
+screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
 plain = pygame.font.Font('BebasNeue.otf', 140)
 fancy = pygame.font.Font('LobsterTwo-Regular.otf', 140)
 title = fancy.render("TriviaBox", True, white)
 listen = plain.render("Listen", True, orange)
+team_text = plain.render(  "Team  : ", True, white)
+player_text = plain.render("Player: ", True, white)
+answer = plain.render("Give Your Answer", True, orange)
+buzz_in = plain.render("Buzz In", True, orange)
 nums = [fancy.render(str(num), True, white) for num in range(1, 6)]
 outer = screen.get_rect()
 inner = outer.inflate(-100, -50)
 radian = 3.1415926/180.0
+
+def ray(cx, cy, angle, radius):
+    return (cx + (math.cos(angle) * radius), cy + (math.sin(angle) * radius))
+
+def clock(extra_text, offset):
+    print "Clock"
+    x = _center(width, 0)
+    y = _center(height, 0)
+    expected_fps = 8
+    time_between_frames = (1.0 / float(expected_fps))
+    inc = 360 / (5 * expected_fps)
+    end = 0
+    elapsed = 0.0
+    now = datetime.datetime.utcnow()
+    lag_total = 0.0
+    computed_points = []
+    team = -1
+    player = -1
+    while end < 360:
+        cls()
+
+        if end + inc >= 360:
+            computed_points.append(ray(x, y, 360 * radian, 300))
+        else:
+            for p in range(end, end + inc, 5):  # 5 degree steps always
+                computed_points.append(ray(x, y, p * radian, 300))
+
+        lag_start = datetime.datetime.utcnow()
+        points = [(x, y)]
+        points.extend(computed_points)
+        points.append((x,y))
+        pygame.draw.polygon(screen, green, points)
+        left = 4 - int(elapsed)
+        draw_centered(nums[left], screen)
+        pygame.display.flip()
+        lag_end = datetime.datetime.utcnow()
+        diff = lag_end - lag_start
+        lag = diff.total_seconds()
+        # print "LAG:", lag
+        lag_total += lag
+
+        time.sleep((0.9 * time_between_frames) - lag)
+        elapsed += time_between_frames
+        end += inc
+
+        team, player = read_team_and_player_kb()
+        if team > -1 and team < 4:
+            break
+
+    print "Winner: %d, Player: %d" % (team, player)
+    print
+
+    print "NUM %.3f %s / Lag Total: %f" % (elapsed, datetime.datetime.utcnow() - now, lag_total)
+    return team, player
+
+def get_answer(team, player):
+    cls()
+    draw_centered(answer, screen)
+    pygame.display.flip()
+
 
 if False:
     print "Welcome"
@@ -75,63 +156,16 @@ if False:
     pygame.display.flip()
     time.sleep(3)
 
-if False:
+if True:
     print "Listen"
     cls()
     draw_centered(listen, screen)
     pygame.display.flip()
-    wait_for_key()
-
-
-def ray(cx, cy, angle, radius):
-    return (cx + (math.cos(angle) * radius), cy + (math.sin(angle) * radius))
-
-
-print "Clock"
-x = _center(width, 0)
-y = _center(height, 0)
-expected_fps = 8
-time_between_frames = (1.0 / float(expected_fps))
-inc = 360 / (5 * expected_fps)
-end = 0
-elapsed = 0.0
-now = datetime.datetime.utcnow()
-lag_total = 0.0
-computed_points = []
-team = -1
-player = -1
-while end < 360:
-    cls()
-
-    if end + inc >= 360:
-        computed_points.append(ray(x, y, 360 * radian, 300))
-    else:
-        for p in range(end, end + inc, 5):  # 5 degree steps always
-            computed_points.append(ray(x, y, p * radian, 300))
-
-    lag_start = datetime.datetime.utcnow()
-    points = [(x, y)]
-    points.extend(computed_points)
-    points.append((x,y))
-    pygame.draw.polygon(screen, green, points)
-    left = 4 - int(elapsed)
-    draw_centered(nums[left], screen)
-    pygame.display.flip()
-    lag_end = datetime.datetime.utcnow()
-    diff = lag_end - lag_start
-    lag = diff.total_seconds()
-    # print "LAG:", lag
-    lag_total += lag
-
-    time.sleep((0.9 * time_between_frames) - lag)
-    elapsed += time_between_frames
-    end += inc
-
-    team, player = read_team_and_player()
-    if team > -1 and team < 4:
-        break
-
-print "Winner: %d, Player: %d" % (team, player)
-print
-
-print "NUM %.3f %s / Lag Total: %f" % (elapsed, datetime.datetime.utcnow() - now, lag_total)
+    while True:
+        team, player = read_team_and_player_kb()
+        if team == -1:
+            continue
+        if team > -1:
+            team, player = clock(buzz_in, (0, -200))
+        if team > -1:
+            get_answer(team, player)
