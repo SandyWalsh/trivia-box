@@ -98,23 +98,42 @@ def read_team_and_player():
         return (-1, -1)
 
 
+def load_image(filename):
+    image = pygame.image.load(filename)
+    image = image.convert(screen)
+    return pygame.transform.scale(image, screen.get_size())
+
 
 print "DISPLAY", pygame.display.get_driver()
 screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
 plain = pygame.font.Font('BebasNeue.otf', 140)
 fancy = pygame.font.Font('LobsterTwo-Regular.otf', 140)
 title = fancy.render("TriviaBox", True, white)
-listen = plain.render("Listen", True, orange)
+listen = plain.render("Listen", True, black)
 answer = plain.render("Give Your Answer", True, orange)
-buzz_in = plain.render("Buzz In", True, orange)
-right_answer = plain.render("Correct!", True, green)
+answer_is = plain.render("Your answer is ...", True, orange)
+buzz_in = plain.render("Buzz In", True, white)
+right_answer = plain.render("Correct!", True, black)
 wrong_answer = plain.render("Incorrect", True, blue)
-buzz_in = plain.render("Buzz In", True, orange)
 nums = [fancy.render(str(num), True, white) for num in range(1, 6)]
 outer = screen.get_rect()
 inner = outer.inflate(-100, -50)
 radian = 3.1415926/180.0
 
+listen_image = load_image('listen.jpg')
+button = load_image('button.png')
+success = load_image('success.png')
+failure = load_image('failure.png')
+too_late = load_image('too_late.png')
+
+shhh = pygame.mixer.Sound('shhh.ogg')
+jeopardy = pygame.mixer.Sound('jeopardy.ogg')
+jeopardy.set_volume(.1)
+tick = pygame.mixer.Sound('tick.ogg')
+tick.set_volume(.1)
+failure_sound = pygame.mixer.Sound('fail.ogg')
+success_sound = pygame.mixer.Sound('success.ogg')
+clong_sound = pygame.mixer.Sound('clong.ogg')
 
 def ray(cx, cy, angle, radius):
     return (cx + (math.cos(angle) * radius), cy + (math.sin(angle) * radius))
@@ -130,7 +149,17 @@ def team_and_player_handler():
     return (False, (-1, -1))
 
 
-def clock(extra_text, row_offset, handler):
+def start_answer_handler():
+    for event in pygame.event.get():
+        if event.type == pygame.KEYDOWN:
+            key = event.key
+            if key == 27:
+                sys.exit(1)
+            return True, None
+    return False, None
+
+
+def clock(extra_text, handler, background=None, sound=None):
     print "Clock"
     x = _center(width, 0)
     y = _center(height, 0)
@@ -144,8 +173,12 @@ def clock(extra_text, row_offset, handler):
     computed_points = []
     team = -1
     player = -1
+    if sound:
+        sound.play()
     while end < 360:
         cls()
+        if background:
+            screen.blit(background, (0, 0))
 
         if end + inc >= 360:
             computed_points.append(ray(x, y, 360 * radian, 300))
@@ -160,7 +193,8 @@ def clock(extra_text, row_offset, handler):
         pygame.draw.polygon(screen, green, points)
         left = 4 - int(elapsed)
         draw_centered(nums[left], screen)
-        draw_centered(extra_text, screen, row_offset)
+        for extra, row_offset in extra_text:
+            draw_centered(extra, screen, row_offset)
         pygame.display.flip()
         lag_end = datetime.datetime.utcnow()
         diff = lag_end - lag_start
@@ -178,6 +212,17 @@ def clock(extra_text, row_offset, handler):
 
     print "NUM %.3f %s / Lag Total: %f" % \
         (elapsed, datetime.datetime.utcnow() - now, lag_total)
+
+    if sound:
+        sound.stop()
+
+    if not should_break:
+        clong_sound.play()
+        cls()
+        screen.blit(too_late, (0, 0))
+        pygame.display.flip()
+        wait_for_key()
+
     return payload
 
 
@@ -187,19 +232,29 @@ def get_answer(team, player):
     player_name = teams[team][1][player]
     team_text = plain.render(team_name, True, white)
     player_text = plain.render(player_name, True, white)
-    draw_centered(team_text, screen, -2)
-    draw_centered(player_text, screen, -1)
-    draw_centered(answer, screen, 1)
+    extra_text = [(team_text, -2),
+                  (player_text, -1),
+                  (answer, 1)]
+
+    clock(extra_text, start_answer_handler, sound=tick)
+    cls()
+    draw_centered(answer_is, screen)
     pygame.display.flip()
     correct = read_right_or_wrong()
 
     cls()
+    ch = None
     if correct:
+        screen.blit(success, (0,0))
         draw_centered(right_answer, screen)
+        ch = success_sound.play()
     else:
+        screen.blit(failure, (0,0))
         draw_centered(wrong_answer, screen)
+        ch = failure_sound.play()
     pygame.display.flip()
     wait_for_key()
+    ch.stop()
     return correct
 
 print "Welcome"
@@ -211,14 +266,19 @@ wait_for_key()
 while True:
     print "Listen"
     cls()
-    draw_centered(listen, screen)
+    screen.blit(listen_image, (0, 0))
+    draw_centered(listen, screen, -2)
+    shhh.play()
     pygame.display.flip()
+
     while True:
         team, player = read_team_and_player()
         if team == -1:
             continue
         if team == -2:
-            team, player = clock(buzz_in, -1, team_and_player_handler)
+            extra_text = [(buzz_in, -1)]
+            team, player = clock(extra_text, team_and_player_handler,
+                                 background=button, sound=jeopardy)
         if team > -1:
             correct = get_answer(team, player)
         else:
