@@ -3,20 +3,11 @@ import json
 import math
 import pygame
 import time
-
-bus = None
-try:
-    import smbus
-
-    # RPI version 1, must use "bus = smbus.SMBus(0)"
-    bus = smbus.SMBus(0)
-except:
-    pass
-
 import sys
 
-# This is the address we setup in the Arduino Program
-address = 0x04
+import pifacedigitalio
+
+piface = pifacedigitalio.PiFaceDigital()
 
 pygame.init()
 #size = width, height = 1024, 768
@@ -112,16 +103,19 @@ def read_team_and_player_kb():
 
 
 def read_team_and_player():
-    if not bus:
+    data = piface.input_port.value
+    if not data:
         return read_team_and_player_kb()
 
-    try:
-        data = bus.read_i2c_block_data(address, 0, 2)
-        team = data[0];
-        player = data[1];
-        return (team, player)
-    except IOError:
-        return (-1, -1)
+    pin = 7
+    for team_index, team_info in enumerate(teams):
+        team, players = team_info
+        for player_index, player_info in enumerate(players):
+            print "Pin %d = %d" % (pin, piface.input_pins[pin].value)
+            if piface.input_pins[pin].value:
+                return (team_index, player_index)
+            pin -= 1
+    return read_team_and_player_kb()
 
 
 def load_image(filename):
@@ -168,7 +162,7 @@ def ray(cx, cy, angle, radius):
 def team_and_player_handler():
     team, player = read_team_and_player()
     if team > -1 and team < 4:
-        print "Winner: %d, Player: %d" % (team, player)
+        print "Team: %d, Player: %d" % (team, player)
         print
         return (True, (team, player))
 
