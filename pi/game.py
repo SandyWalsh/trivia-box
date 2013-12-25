@@ -5,9 +5,13 @@ import pygame
 import time
 import sys
 
-import pifacedigitalio
+piface = None
+try:
+    import pifacedigitalio
+    piface = pifacedigitalio.PiFaceDigital()
+except ImportError:
+    pass
 
-piface = pifacedigitalio.PiFaceDigital()
 
 pygame.init()
 #size = width, height = 1024, 768
@@ -108,7 +112,9 @@ def read_team_and_player_kb():
 
 
 def read_team_and_player():
-    data = piface.input_port.value
+    data = 0
+    if piface:
+        data = piface.input_port.value
     if not data:
         return read_team_and_player_kb()
 
@@ -299,6 +305,7 @@ wait_for_key()
 
 while state['current_round'] < 20:
     cls()
+    print "Showing standings"
     row = -2
     colors = [green, blue]
     for idx, score in enumerate(scores):
