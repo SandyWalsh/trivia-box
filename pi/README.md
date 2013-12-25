@@ -19,14 +19,14 @@ The game itself assumes two teams for four players. These are defined in
 This corresponds to Team 1 then Team 2. Players are input 0, 1, 2, 3 
 for their respective teams. In other words:
 
-Pin 7 = Team 2, Player 3
-Pin 6 = Team 2, Player 2
-Pin 5 = Team 2, Player 1
-Pin 4 = Team 2, Player 0
-Pin 3 = Team 1, Player 3
-Pin 2 = Team 1, Player 2
-Pin 1 = Team 1, Player 1
-Pin 0 = Team 1, Player 0
+* Pin 7 = Team 2, Player 3
+* Pin 6 = Team 2, Player 2
+* Pin 5 = Team 2, Player 1
+* Pin 4 = Team 2, Player 0
+* Pin 3 = Team 1, Player 3
+* Pin 2 = Team 1, Player 2
+* Pin 1 = Team 1, Player 1
+* Pin 0 = Team 1, Player 0
 
 ## Flow
 
