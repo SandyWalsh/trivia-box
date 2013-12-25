@@ -50,6 +50,8 @@ except IOError:
 for score in scores:
     print "Team:", score
 
+for team, players in teams:
+    print "Team:", team, "Players:", players
 
 def wait_for_key():
     while True:
@@ -96,7 +98,9 @@ def read_team_and_player_kb():
                 sys.exit(1)
             if key >= ord('1') and key <= ord('8'):
                 ch = event.key - ord('1')
-                return (ch / 4, ch % 4)
+                team, player = ch / 4, ch % 4
+                print "Team: %d, Player: %d" % (team, player)
+                return (team, player)
             else:
                 return (-2, -2)
     return (-1, -1)
@@ -107,14 +111,14 @@ def read_team_and_player():
     if not data:
         return read_team_and_player_kb()
 
-    pin = 7
+    pin = 0
     for team_index, team_info in enumerate(teams):
         team, players = team_info
         for player_index, player_info in enumerate(players):
-            print "Pin %d = %d" % (pin, piface.input_pins[pin].value)
             if piface.input_pins[pin].value:
+                print "Team: %d, Player: %d" % (team_index, player_index)
                 return (team_index, player_index)
-            pin -= 1
+            pin += 1
     return read_team_and_player_kb()
 
 
@@ -162,8 +166,6 @@ def ray(cx, cy, angle, radius):
 def team_and_player_handler():
     team, player = read_team_and_player()
     if team > -1 and team < 4:
-        print "Team: %d, Player: %d" % (team, player)
-        print
         return (True, (team, player))
 
     return (False, (-1, -1))
