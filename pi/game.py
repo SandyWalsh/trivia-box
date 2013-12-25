@@ -80,14 +80,15 @@ def draw_centered(image, dest, row=0):
 
 
 def read_right_or_wrong():
-    event = wait_for_key()
-    key = event.key
-    if key == 27:
-        sys.exit(1)
-    if key == ord('y'):
-        return True
-    if key == ord('n'):
-        return False
+    while True:
+        event = wait_for_key()
+        key = event.key
+        if key == 27:
+            sys.exit(1)
+        if key == ord('y'):
+            return True
+        if key == ord('n'):
+            return False
 
 
 def read_team_and_player_kb():
@@ -224,13 +225,21 @@ def clock(extra_text, handler, background=None, sound=None):
         # print "LAG:", lag
         lag_total += lag
 
-        time.sleep((0.9 * time_between_frames) - lag)
-        elapsed += time_between_frames
-        end += inc
+        # Fast poll to avoid sleep() calls which could
+        # result in missing the first-to-press.
+        wait = datetime.datetime.utcnow()
+        duration = (0.9 * time_between_frames) - lag
+        while (wait - lag_end).total_seconds() < duration:
+            should_break, payload = handler()
+            if should_break:
+                break
 
-        should_break, payload = handler()
+            wait = datetime.datetime.utcnow()
+
         if should_break:
             break
+        elapsed += time_between_frames
+        end += inc
 
     print "NUM %.3f %s / Lag Total: %f" % \
         (elapsed, datetime.datetime.utcnow() - now, lag_total)
