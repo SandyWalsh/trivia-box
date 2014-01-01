@@ -68,7 +68,23 @@ The game flow is as follows:
     
     Once the player has started answering the question, this
     screen is displayed. The host then presses Y or N if the
-    answer is correct or incorrect. 
+    answer is correct or incorrect. Or the host can press S
+    to start the Steal phase.
+
+* Steal
+
+    For questions that are not True/False, the opposing team
+    has a chance to steal after an incorrect answer is given.
+    They get another 5 second timer to buzz in. If they
+    buzz in, that player can answer for +5pts. Incorrect
+    attempts to steal are -5pts. The original team still loses
+    10pts for the first wrong answer. If the opposing
+    team does no buzz in, only the original team loses points.
+
+    The original team cannot buzz in during the steal phase.
+
+    Optional rules: the opposing team can confer before buzzing
+    in. 
 
 * Right / Wrong
     
