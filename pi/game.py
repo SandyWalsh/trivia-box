@@ -313,10 +313,11 @@ def update_score(team, player, delta):
 
 def get_answer(team, player, can_steal=True, answer_value=10):
     cls()
+    color = [blue, white][team]
     team_name = teams[team][0]
     player_name = teams[team][1][player]
-    team_text = plain.render(team_name, True, white)
-    player_text = plain.render(player_name, True, white)
+    team_text = plain.render(team_name, True, color)
+    player_text = plain.render(player_name, True, color)
     extra_text = [(team_text, -2),
                   (player_text, -1),
                   (answer, 1)]
@@ -380,21 +381,21 @@ wait_for_key()
 print "Test buzzers"
 input_state = [[0,0,0,0], [0,0,0,0]]
 x = _center(width, 0)
-print "X=", x, width
+test_text = plain.render("Test your buzzers", True, white)
 while True:
     cls()
+    screen.blit(test_text, (_center(width, test_text.get_size()[0]), 0))
     stop = fast_scan_inputs(input_state)
     if stop:
         break
-    print input_state
     for team in range(0, 2):
         for player in range(0, 4):
             if not input_state[team][player]:
                 continue
             player_name = teams[team][1][player]
-            player_text = plain.render(player_name, True, white)
+            player_text = plain.render(player_name, True, [blue, green][team])
             text_height = player_text.get_size()[1]
-            screen.blit(player_text, (team * x, player * text_height))
+            screen.blit(player_text, (team * x, (1 + player) * text_height))
 
     pygame.display.flip()
     time.sleep(.1)
