@@ -14,8 +14,10 @@ except ImportError:
 
 
 pygame.init()
-#size = width, height = 1024, 768
-size = (pygame.display.Info().current_w, pygame.display.Info().current_h)
+#size = (pygame.display.Info().current_w, pygame.display.Info().current_h)
+#font_size = 140
+size = width, height = 1024, 768
+font_size = 120
 width, height = size
 print "CONSOLE", size
 black = 0, 0, 0
@@ -57,6 +59,7 @@ for score in scores:
 for team, players in teams:
     print "Team:", team, "Players:", players
 
+
 def wait_for_key():
     while True:
         for event in pygame.event.get():
@@ -64,6 +67,7 @@ def wait_for_key():
                 if event.key == 27:
                     sys.exit(1)
                 return event
+
 
 def _center(larger, smaller):
     return (larger/2) - (smaller/2)
@@ -169,8 +173,8 @@ def load_image(filename):
 
 print "DISPLAY", pygame.display.get_driver()
 screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
-plain = pygame.font.Font('BebasNeue.otf', 140)
-fancy = pygame.font.Font('LobsterTwo-Regular.otf', 140)
+plain = pygame.font.Font('BebasNeue.otf', font_size)
+fancy = pygame.font.Font('LobsterTwo-Regular.otf', font_size)
 title = fancy.render("TriviaBox", True, white)
 listen = plain.render("Listen", True, black)
 answer = plain.render("Give Your Answer", True, orange)
@@ -182,7 +186,7 @@ wrong_answer = plain.render("Incorrect", True, blue)
 nums = [fancy.render(str(num), True, white) for num in range(1, 6)]
 outer = screen.get_rect()
 inner = outer.inflate(-100, -50)
-radian = 3.1415926/180.0
+radian = 3.1415926 / 180.0
 
 listen_image = load_image('listen.jpg')
 button = load_image('button.png')
@@ -199,10 +203,31 @@ tick.set_volume(.1)
 failure_sound = pygame.mixer.Sound('fail.ogg')
 success_sound = pygame.mixer.Sound('success.ogg')
 clong_sound = pygame.mixer.Sound('clong.ogg')
+horns = [pygame.mixer.Sound('car_horn.ogg'),
+         pygame.mixer.Sound('bike_horn.ogg')]
 
 
 def ray(cx, cy, angle, radius):
     return (cx + (math.cos(angle) * radius), cy + (math.sin(angle) * radius))
+
+
+def wait_for_sound(ch):
+    while ch.get_busy():
+        time.sleep(.1)
+
+
+def show_buzzed_in(team, player):
+    cls()
+    color = [blue, green][team]
+    team_name = teams[team][0]
+    player_name = teams[team][1][player]
+    team_text = plain.render(team_name, True, color)
+    player_text = plain.render(player_name, True, color)
+    draw_centered(team_text, screen, -1)
+    draw_centered(player_text, screen)
+    pygame.display.flip()
+    ch = horns[team].play()
+    wait_for_sound(ch)
 
 
 def team_and_player_handler(handler_args):
@@ -366,6 +391,7 @@ def get_answer(team, player, can_steal=True, answer_value=10):
                              handler_args=[team],
                              background=steal, sound=jeopardy)
         if team != -1:
+            show_buzzed_in(team, player)
             get_answer(team, player, can_steal=False, answer_value=5)
             return
     if ch:
@@ -382,6 +408,7 @@ print "Test buzzers"
 input_state = [[0,0,0,0], [0,0,0,0]]
 x = _center(width, 0)
 test_text = plain.render("Test your buzzers", True, white)
+cache = {}
 while True:
     cls()
     screen.blit(test_text, (_center(width, test_text.get_size()[0]), 0))
@@ -393,7 +420,11 @@ while True:
             if not input_state[team][player]:
                 continue
             player_name = teams[team][1][player]
-            player_text = plain.render(player_name, True, [blue, green][team])
+            player_text = cache.get(player_name)
+            if not player_text:
+                player_text = plain.render(player_name, True,
+                                           [blue, green][team])
+                cache[player_name] = player_text
             text_height = player_text.get_size()[1]
             screen.blit(player_text, (team * x, (1 + player) * text_height))
 
@@ -434,6 +465,7 @@ while state['current_round'] < 20:
             team, player = clock(extra_text, team_and_player_handler,
                                  background=button, sound=jeopardy)
         if team > -1:
+            show_buzzed_in(team, player)
             state['current_round'] = state['current_round'] + 1
             get_answer(team, player)
         else:
