@@ -116,6 +116,7 @@ def read_team_and_player():
     for team_index, team_info in enumerate(teams):
         team, players = team_info
         for player_index, player_info in enumerate(players):
+            print piface.input_pins[pin].value
             if piface.input_pins[pin].value:
                 print "Team: %d, Player: %d" % (team_index, player_index)
                 return (team_index, player_index)
