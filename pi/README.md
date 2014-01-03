@@ -1,8 +1,8 @@
 # Trivia game for Raspberry Pi
 
-Currently this uses I2C to communicate with an Arduino which monitors the
-input buttons. But I think the GPIO on the RPi should be plenty fast
-enough and there seems to be enough pins ... so I'll likely change all this. 
+Reads inputs from PiFace DIO card. 
+Inputs 0-3 = Team 1
+Inputs 4-7 = Team 2
 
 The game itself assumes two teams for four players. These are defined in
 `config.json`, which looks like this
@@ -15,6 +15,18 @@ The game itself assumes two teams for four players. These are defined in
     ]
 }
 ```
+
+This corresponds to Team 1 then Team 2. Players are input 0, 1, 2, 3 
+for their respective teams. In other words:
+
+* Pin 7 = Team 2, Player 3
+* Pin 6 = Team 2, Player 2
+* Pin 5 = Team 2, Player 1
+* Pin 4 = Team 2, Player 0
+* Pin 3 = Team 1, Player 3
+* Pin 2 = Team 1, Player 2
+* Pin 1 = Team 1, Player 1
+* Pin 0 = Team 1, Player 0
 
 ## Flow
 
@@ -56,7 +68,23 @@ The game flow is as follows:
     
     Once the player has started answering the question, this
     screen is displayed. The host then presses Y or N if the
-    answer is correct or incorrect. 
+    answer is correct or incorrect. Or the host can press S
+    to start the Steal phase.
+
+* Steal
+
+    For questions that are not True/False, the opposing team
+    has a chance to steal after an incorrect answer is given.
+    They get another 5 second timer to buzz in. If they
+    buzz in, that player can answer for +5pts. Incorrect
+    attempts to steal are -5pts. The original team still loses
+    10pts for the first wrong answer. If the opposing
+    team does no buzz in, only the original team loses points.
+
+    The original team cannot buzz in during the steal phase.
+
+    Optional rules: the opposing team can confer before buzzing
+    in. 
 
 * Right / Wrong
     

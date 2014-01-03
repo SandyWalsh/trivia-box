@@ -5,13 +5,19 @@ import pygame
 import time
 import sys
 
-import pifacedigitalio
+piface = None
+try:
+    import pifacedigitalio
+    piface = pifacedigitalio.PiFaceDigital()
+except ImportError:
+    pass
 
-piface = pifacedigitalio.PiFaceDigital()
 
 pygame.init()
-#size = width, height = 1024, 768
-size = (pygame.display.Info().current_w, pygame.display.Info().current_h)
+#size = (pygame.display.Info().current_w, pygame.display.Info().current_h)
+#font_size = 140
+size = width, height = 1024, 768
+font_size = 120
 width, height = size
 print "CONSOLE", size
 black = 0, 0, 0
@@ -53,6 +59,7 @@ for score in scores:
 for team, players in teams:
     print "Team:", team, "Players:", players
 
+
 def wait_for_key():
     while True:
         for event in pygame.event.get():
@@ -60,6 +67,7 @@ def wait_for_key():
                 if event.key == 27:
                     sys.exit(1)
                 return event
+
 
 def _center(larger, smaller):
     return (larger/2) - (smaller/2)
@@ -79,16 +87,18 @@ def draw_centered(image, dest, row=0):
     dest.blit(image, (left, top))
 
 
-def read_right_or_wrong():
+def read_right_or_wrong(can_steal):
     while True:
         event = wait_for_key()
         key = event.key
         if key == 27:
             sys.exit(1)
         if key == ord('y'):
-            return True
+            return "right"
         if key == ord('n'):
-            return False
+            return "wrong"
+        if key == ord('s') and can_steal:
+            return "steal"
 
 
 def read_team_and_player_kb():
@@ -108,7 +118,9 @@ def read_team_and_player_kb():
 
 
 def read_team_and_player():
-    data = piface.input_port.value
+    data = 0
+    if piface:
+        data = piface.input_port.value
     if not data:
         return read_team_and_player_kb()
 
@@ -124,6 +136,36 @@ def read_team_and_player():
     return read_team_and_player_kb()
 
 
+def fast_scan_inputs(input_state):
+    if piface:
+        pin = 0
+        for team_index, team_info in enumerate(teams):
+            team, players = team_info
+            for player_index, player_info in enumerate(players):
+                input_state[team_index][player_index] = \
+                    piface.input_pins[pin].value
+                pin += 1
+
+    for event in pygame.event.get():
+        if event.type == pygame.KEYDOWN:
+            key = event.key
+            if key == 27:
+                sys.exit(1)
+            if key == 32:
+                return True
+            if key >= ord('1') and key <= ord('8'):
+                ch = event.key - ord('1')
+                team, player = ch / 4, ch % 4
+                input_state[team][player] = 1
+        if event.type == pygame.KEYUP:
+            key = event.key
+            if key >= ord('1') and key <= ord('8'):
+                ch = event.key - ord('1')
+                team, player = ch / 4, ch % 4
+                input_state[team][player] = 0
+    return False
+
+
 def load_image(filename):
     image = pygame.image.load(filename)
     image = image.convert(screen)
@@ -132,11 +174,12 @@ def load_image(filename):
 
 print "DISPLAY", pygame.display.get_driver()
 screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
-plain = pygame.font.Font('BebasNeue.otf', 140)
-fancy = pygame.font.Font('LobsterTwo-Regular.otf', 140)
+plain = pygame.font.Font('BebasNeue.otf', font_size)
+fancy = pygame.font.Font('LobsterTwo-Regular.otf', font_size)
 title = fancy.render("TriviaBox", True, white)
 listen = plain.render("Listen", True, black)
 answer = plain.render("Give Your Answer", True, orange)
+buzz_to_steal = plain.render("Buzz in to steal", True, orange)
 answer_is = plain.render("Your answer is ...", True, orange)
 buzz_in = plain.render("Buzz In", True, white)
 right_answer = plain.render("Correct!", True, black)
@@ -144,13 +187,14 @@ wrong_answer = plain.render("Incorrect", True, blue)
 nums = [fancy.render(str(num), True, white) for num in range(1, 6)]
 outer = screen.get_rect()
 inner = outer.inflate(-100, -50)
-radian = 3.1415926/180.0
+radian = 3.1415926 / 180.0
 
 listen_image = load_image('listen.jpg')
 button = load_image('button.png')
 success = load_image('success.png')
 failure = load_image('failure.png')
 too_late = load_image('too_late.png')
+steal = load_image('steal.png')
 
 shhh = pygame.mixer.Sound('shhh.ogg')
 jeopardy = pygame.mixer.Sound('jeopardy.ogg')
@@ -160,20 +204,45 @@ tick.set_volume(.1)
 failure_sound = pygame.mixer.Sound('fail.ogg')
 success_sound = pygame.mixer.Sound('success.ogg')
 clong_sound = pygame.mixer.Sound('clong.ogg')
+horns = [pygame.mixer.Sound('car_horn.ogg'),
+         pygame.mixer.Sound('bike_horn.ogg')]
+
 
 def ray(cx, cy, angle, radius):
     return (cx + (math.cos(angle) * radius), cy + (math.sin(angle) * radius))
 
 
-def team_and_player_handler():
+def wait_for_sound(ch):
+    while ch.get_busy():
+        time.sleep(.1)
+
+
+def show_buzzed_in(team, player):
+    cls()
+    color = [blue, green][team]
+    team_name = teams[team][0]
+    player_name = teams[team][1][player]
+    team_text = plain.render(team_name, True, color)
+    player_text = plain.render(player_name, True, color)
+    draw_centered(team_text, screen, -1)
+    draw_centered(player_text, screen)
+    pygame.display.flip()
+    ch = horns[team].play()
+    wait_for_sound(ch)
+
+
+def team_and_player_handler(handler_args):
     team, player = read_team_and_player()
-    if team > -1 and team < 4:
+    valid_teams = range(0, 4)
+    if handler_args:
+        valid_teams = handler_args
+    if team in valid_teams:
         return (True, (team, player))
 
     return (False, (-1, -1))
 
 
-def start_answer_handler():
+def start_answer_handler(handler_args):
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
             key = event.key
@@ -183,7 +252,7 @@ def start_answer_handler():
     return False, None
 
 
-def clock(extra_text, handler, background=None, sound=None):
+def clock(extra_text, handler, handler_args=None, background=None, sound=None):
     print "Clock"
     x = _center(width, 0)
     y = _center(height, 0)
@@ -231,7 +300,7 @@ def clock(extra_text, handler, background=None, sound=None):
         wait = datetime.datetime.utcnow()
         duration = (0.9 * time_between_frames) - lag
         while (wait - lag_end).total_seconds() < duration:
-            should_break, payload = handler()
+            should_break, payload = handler(handler_args)
             if should_break:
                 break
 
@@ -258,12 +327,23 @@ def clock(extra_text, handler, background=None, sound=None):
     return payload
 
 
-def get_answer(team, player):
+def wait_for_sound(ch):
+    while ch.get_busy():
+        time.sleep(.1)
+
+
+def update_score(team, player, delta):
+    scores[team][player] += delta
+    save_state('state.json')
+
+
+def get_answer(team, player, can_steal=True, answer_value=10):
     cls()
+    color = [blue, white][team]
     team_name = teams[team][0]
     player_name = teams[team][1][player]
-    team_text = plain.render(team_name, True, white)
-    player_text = plain.render(player_name, True, white)
+    team_text = plain.render(team_name, True, color)
+    player_text = plain.render(player_name, True, color)
     extra_text = [(team_text, -2),
                   (player_text, -1),
                   (answer, 1)]
@@ -272,25 +352,52 @@ def get_answer(team, player):
     cls()
     draw_centered(answer_is, screen)
     pygame.display.flip()
-    correct = read_right_or_wrong()
+    action = read_right_or_wrong(can_steal)
+
+    x = _center(width, 0)
+    y = _center(height, 0)
+    x += (x/2)
+    y -= (y/2)
 
     cls()
     ch = None
-    if correct:
+    if action == "right":
         screen.blit(success, (0,0))
         draw_centered(right_answer, screen)
+        score_text = plain.render("+%d" % answer_value, True, black)
+        screen.blit(score_text, (x, y))
         ch = success_sound.play()
-        scores[team][player] += 10
-    else:
+        update_score(team, player, answer_value)
+        pygame.display.flip()
+        wait_for_key()
+    elif action == "wrong":
         screen.blit(failure, (0,0))
         draw_centered(wrong_answer, screen)
+        score_text = plain.render("-%d" % answer_value, True, black)
+        screen.blit(score_text, (x, y))
         ch = failure_sound.play()
-        scores[team][player] -= 10
-    pygame.display.flip()
-    save_state('state.json')
-    wait_for_key()
-    ch.stop()
-    return correct
+        update_score(team, player, -answer_value)
+        pygame.display.flip()
+        wait_for_key()
+    elif action == "steal":
+        update_score(team, player, -answer_value)
+        team = (team + 1) % 2
+        team_name = teams[team][0]
+        team_text = plain.render(team_name, True, black)
+        extra_text = [(team_text, -1),
+                      (buzz_to_steal, 1)]
+        ch = failure_sound.play()
+        wait_for_sound(ch)
+        team, player = clock(extra_text, team_and_player_handler,
+                             handler_args=[team],
+                             background=steal, sound=jeopardy)
+        if team != -1:
+            show_buzzed_in(team, player)
+            get_answer(team, player, can_steal=False, answer_value=5)
+            return
+    if ch:
+        ch.stop()
+
 
 print "Welcome"
 cls()
@@ -298,8 +405,37 @@ draw_centered(title, screen)
 pygame.display.flip()
 wait_for_key()
 
+print "Test buzzers"
+input_state = [[0,0,0,0], [0,0,0,0]]
+x = _center(width, 0)
+test_text = plain.render("Test your buzzers", True, white)
+cache = {}
+while True:
+    cls()
+    screen.blit(test_text, (_center(width, test_text.get_size()[0]), 0))
+    stop = fast_scan_inputs(input_state)
+    if stop:
+        break
+    for team in range(0, 2):
+        for player in range(0, 4):
+            if not input_state[team][player]:
+                continue
+            player_name = teams[team][1][player]
+            player_text = cache.get(player_name)
+            if not player_text:
+                player_text = plain.render(player_name, True,
+                                           [blue, green][team])
+                cache[player_name] = player_text
+            text_height = player_text.get_size()[1]
+            screen.blit(player_text, (team * x, (1 + player) * text_height))
+
+    pygame.display.flip()
+    time.sleep(.1)
+
+
 while state['current_round'] < 20:
     cls()
+    print "Showing standings"
     row = -2
     colors = [green, blue]
     for idx, score in enumerate(scores):
@@ -330,6 +466,7 @@ while state['current_round'] < 20:
             team, player = clock(extra_text, team_and_player_handler,
                                  background=button, sound=jeopardy)
         if team > -1:
+            show_buzzed_in(team, player)
             state['current_round'] = state['current_round'] + 1
             get_answer(team, player)
         else:
@@ -353,5 +490,3 @@ this_round = fancy.render("GAME OVER", True, orange)
 draw_centered(this_round, screen, 2)
 pygame.display.flip()
 wait_for_key()
-
-

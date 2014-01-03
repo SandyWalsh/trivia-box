@@ -1,4 +1,4 @@
 trivia-box
 ==========
 
-Trivia game input driver for Arduino
+see pi/README.md
