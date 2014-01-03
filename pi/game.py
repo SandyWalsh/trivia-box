@@ -350,7 +350,9 @@ def get_answer(team, player, can_steal=True, answer_value=10):
 
     clock(extra_text, start_answer_handler, sound=tick)
     cls()
-    draw_centered(answer_is, screen)
+    draw_centered(team_text, screen, -2)
+    draw_centered(player_text, screen, -1)
+    draw_centered(answer_is, screen, 1)
     pygame.display.flip()
     action = read_right_or_wrong(can_steal)
 
