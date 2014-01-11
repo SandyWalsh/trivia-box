@@ -432,10 +432,10 @@ while True:
             screen.blit(player_text, (team * x, (1 + player) * text_height))
 
     pygame.display.flip()
-    time.sleep(.1)
+    #time.sleep(.01)
 
 
-while state['current_round'] < 20:
+while state['current_round'] < 40:
     cls()
     print "Showing standings"
     row = -2
