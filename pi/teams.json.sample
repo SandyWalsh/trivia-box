@@ -1,0 +1,8 @@
+[
+  ["Team A", ["Player 1", "Player 2", "Player 3", "Player 4"]],
+  ["Team B", ["Player 5", "Player 6", "Player 7", "Player 8"]],
+  ["Team C", ["Player 5", "Player 6", "Player 7", "Player 8"]],
+  ["Team D", ["Player 5", "Player 6", "Player 7", "Player 8"]],
+  ["Team E", ["Player 5", "Player 6", "Player 7", "Player 8"]],
+  ["Team F", ["Player 5", "Player 6", "Player 7", "Player 8"]]
+]
