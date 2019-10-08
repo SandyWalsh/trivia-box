@@ -223,3 +223,6 @@
 #Movies: Roald Dahl's Chocolate Factory was owned by whom?*Willy Wonka
 #Movies: What Character said "I'll be back"*The Terminator
 #Movies: What does 'Rizzo'' tell 'Kenickie'' she isn't at the end of the movie Grease?*Pregnant
+#Movies: Name that movie quote - 'Nobody puts baby in a corner!'?*Dirty Dancing
+#Movies: Which role does Emma Watson play in the Harry Potter movies?*Hermione Granger
+#Movies: Which role does Orlando Bloom play in the Lord of the Rings movies?*Legolas
