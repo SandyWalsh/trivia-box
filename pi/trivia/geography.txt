@@ -77,3 +77,4 @@
 #Geography: Acapulco is in which country?*Mexico
 #Geography: This City has the oldest Metro System in the world?*London
 #Geography: Which country is the maple leaf the national symbol?*Canada
+#Geography: What is the capital of Australia?*Canberra

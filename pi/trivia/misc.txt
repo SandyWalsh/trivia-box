@@ -2,7 +2,7 @@ donly="" accesskey="," id="wpTextbox1" cols="80" rows="25" style="" lang="en" di
 
 ===Heroes===
 
-#Misc Trivia: Heroes - Which fictional hero is Clark kent?*Superman
+#Misc Trivia: Heroes - Which fictional hero is Clark Kent?*Superman
 #Misc Trivia: Heroes - Which fictional hero is Paul Metcalfe?*Captain Scarlet
 #Misc Trivia: Heroes - Which fictional hero is Dick Grayson?*Robin
 #Misc Trivia: Heroes - Which fictional hero is Mark Harris?*The Man From Atlantis
@@ -11,7 +11,10 @@ donly="" accesskey="," id="wpTextbox1" cols="80" rows="25" style="" lang="en" di
 #Misc Trivia: Heroes - Which fictional hero is Doctor Banner?*The Incredible Hulk
 #Misc Trivia: Heroes - Which fictional hero is Henry Penfold?*Hong Kong Phooey
 #Misc Trivia: Heroes - Which fictional hero is Peter Parker?*Spiderman
-#Misc Trivia: Heroes - Which fictional hero is Don Blake?*The Mighty Thor
+#Misc Trivia: Heroes - Which fictional hero is Tony Stark?*Ironman
+#Misc Trivia: Heroes - Which fictional hero is Oliver Queen?*The Green Arrow
+#Misc Trivia: Heroes - Which fictional hero is Barry Allen?*The Flash
+#Misc Trivia: Heroes - Which fictional hero is Bruce Wayne?*Batman
 
 ===Phrases===
 
