@@ -28,3 +28,5 @@
 #Computers: Digital Equipment Corporation sued what computer chip manufacturer claiming it stole the technology to develop the Pentium Pro?*Intel Corporation
 #Computers: What was the name of the computer language named after a French philosopher and mathematician?*PASCAL
 #Computers: What was the name of the computer company that was named after the founder's memories of a summer in an Orchard in Oregon?*Apple
+#Computers: Who initially programmed the linux kernel?*Linus Torvalds
+#Computers: What does CPU stand for?*Central Processing Unit
